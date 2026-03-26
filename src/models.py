@@ -1,71 +1,69 @@
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import String, Boolean, ForeignKey  # <--- Agrega ForeignKey aquí
+from sqlalchemy import String, Boolean, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column
+from typing import Optional
 
 db = SQLAlchemy()
 
 class User(db.Model):
+    __tablename__ = 'user'
     id: Mapped[int] = mapped_column(primary_key=True)
-    username: Mapped[str] = mapped_column(String(50))
-    firstname: Mapped[str] = mapped_column(String(25))
-    lastname: Mapped[str] = mapped_column(String(25))
+    password: Mapped[str] = mapped_column(String(20)) # Subí a 20 por seguridad
+    username: Mapped[str] = mapped_column(String(20), unique=True)
     email: Mapped[str] = mapped_column(String(120), unique=True, nullable=False)
-   
+
     def serialize(self):
         return {
             "id": self.id,
             "username": self.username,
-            "firstname": self.username,
-            "lastname": self.username,
-            "email": self.email,
-            "username": self.username,    
+            "email": self.email
         }
 
-class Follower(db.Model):
-    user_from_id: Mapped[int] = mapped_column(ForeignKey("user.id"),primary_key=True)
-    user_to_id: Mapped[int] = mapped_column(ForeignKey("user.id"),primary_key=True)
-   
-   
-    def serialize(self):
-        return {
-            "user_from_id": self.user_from_id,
-            "user_to_id": self.user_to_id,  
-        }
-
-class Comment(db.Model):
+class Personajes(db.Model):
+    __tablename__ = 'personajes'
     id: Mapped[int] = mapped_column(primary_key=True)
-    comment_text: Mapped[str] = mapped_column(String(200))
-    author_id: Mapped[int] = mapped_column(ForeignKey("user.id"))
-    post_id: Mapped[int] = mapped_column(ForeignKey("post.id"))
-   
+    name: Mapped[str] = mapped_column(String(50))
+    height: Mapped[str] = mapped_column(String(20))
+    hair_color: Mapped[str] = mapped_column(String(20))
+    description: Mapped[str] = mapped_column(String(250))
+
     def serialize(self):
         return {
             "id": self.id,
-            "comment_text": self.comment_text,
-            "author_id": self.author_id,
-            "post_id": self.post_id,
+            "name": self.name,
+            "height": self.height,
+            "description": self.description,
+            "hair_color": self.hair_color
         }
 
-class Post(db.Model):
+class Planetas(db.Model):
+    __tablename__ = 'planetas'
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(String(50))
+    climate: Mapped[str] = mapped_column(String(20))
+    population: Mapped[str] = mapped_column(String(20))
+    diameter: Mapped[str] = mapped_column(String(20))
+
+    def serialize(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+            "climate": self.climate,
+            "population": self.population,
+            "diameter": self.diameter
+        }
+
+class Favoritos(db.Model):
+    __tablename__ = 'favoritos'
     id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("user.id"))
-    
+    planet_id: Mapped[Optional[int]] = mapped_column(ForeignKey("planetas.id"))
+    people_id: Mapped[Optional[int]] = mapped_column(ForeignKey("personajes.id"))
+  
     def serialize(self):
         return {
             "id": self.id,
-            "user_id": self.user_id, 
-        } 
-    
-class Media(db.Model):
-    id: Mapped[int] = mapped_column(primary_key=True)
-    type: Mapped[str] = mapped_column(String(25))
-    url: Mapped[str] = mapped_column(String(150))
-    post_id: Mapped[int] = mapped_column(ForeignKey("post.id"))
-    
-    def serialize(self):
-        return {
-            "id": self.id,
-            "type": self.type,
-            "url": self.url,
-            "post_id": self.post_id, 
-        } 
+            "user_id": self.user_id,
+            "planet_id": self.planet_id,
+            "people_id": self.people_id
+        }

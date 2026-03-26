@@ -8,7 +8,7 @@ from flask_swagger import swagger
 from flask_cors import CORS
 from utils import APIException, generate_sitemap
 from admin import setup_admin
-from models import db, User
+from models import db, User, Personajes, Planetas, Favoritos
 #from models import Person
 
 app = Flask(__name__)
@@ -45,7 +45,89 @@ def handle_hello():
 
     return jsonify(response_body), 200
 
+@app.route('/people', methods=['GET'])
+def get_all_people():
+    people = Personajes.query.all()
+    return jsonify([p.serialize() for p in people]), 200
+
+@app.route('/people/<int:people_id>', methods=['GET'])
+def get_one_person(people_id):
+    person = Personajes.query.get(people_id)
+    if person is None:
+        return jsonify({"msg": "Personaje no encontrado"}), 404
+    return jsonify(person.serialize()), 200
+
+@app.route('/planets', methods=['GET'])
+def get_all_planets():
+    planets = Planetas.query.all()
+    return jsonify([p.serialize() for p in planets]), 200
+
+
+@app.route('/users/favorites', methods=['GET'])
+def get_user_favorites():
+    user_id = 1
+    favorites = Favoritos.query.filter_by(user_id=user_id).all()
+    return jsonify([f.serialize() for f in favorites]), 200
+
+@app.route('/favorite/planet/<int:planet_id>', methods=['POST'])
+def add_favorite_planet(planet_id):
+    user_id = 1     
+    exists = Favoritos.query.filter_by(user_id=user_id, planet_id=planet_id).first()
+    if exists:
+        return jsonify({"msg": "Ya está en favoritos"}), 400
+        
+    new_fav = Favoritos(user_id=user_id, planet_id=planet_id)
+    db.session.add(new_fav)
+    db.session.commit()
+    return jsonify({"msg": "Planeta guardado"}), 200
+
+@app.route('/favorite/people/<int:people_id>', methods=['POST'])
+def add_favorite_person(people_id):
+    user_id = 1
+    exists = Favoritos.query.filter_by(user_id=user_id, people_id=people_id).first()
+    if exists:
+        return jsonify({"msg": "Ya está en favoritos"}), 400
+
+    new_fav = Favoritos(user_id=user_id, people_id=people_id)
+    db.session.add(new_fav)
+    db.session.commit()
+    return jsonify({"msg": "Personaje guardado"}), 200
+
+@app.route('/favorite/planet/<int:planet_id>', methods=['DELETE'])
+def delete_favorite_planet(planet_id):
+    user_id = 1
+    fav = Favoritos.query.filter_by(user_id=user_id, planet_id=planet_id).first()
+    if fav:
+        db.session.delete(fav)
+        db.session.commit()
+        return jsonify({"msg": "Planeta eliminado de favoritos"}), 200
+    return jsonify({"msg": "No encontrado"}), 404
+
+@app.route('/favorite/people/<int:people_id>', methods=['DELETE'])
+def delete_favorite_person(people_id):
+    user_id = 1
+    fav = Favoritos.query.filter_by(user_id=user_id, people_id=people_id).first()
+    if fav:
+        db.session.delete(fav)
+        db.session.commit()
+        return jsonify({"msg": "Personaje eliminado de favoritos"}), 200
+    return jsonify({"msg": "No encontrado"}), 404
+
+@app.route('/planets/<int:planet_id>', methods=['GET'])
+def get_one_planet(planet_id):
+    planet = Planetas.query.get(planet_id)
+    if planet is None:
+        return jsonify({"msg": "Planeta no encontrado"}), 404
+    return jsonify(planet.serialize()), 200
+
+@app.route('/users', methods=['GET'])
+def get_all_users():
+    users = User.query.all()
+    return jsonify([u.serialize() for u in users]), 200
+
+
 # this only runs if `$ python src/app.py` is executed
 if __name__ == '__main__':
     PORT = int(os.environ.get('PORT', 3000))
     app.run(host='0.0.0.0', port=PORT, debug=False)
+
