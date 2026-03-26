@@ -57,10 +57,66 @@ def get_one_person(people_id):
         return jsonify({"msg": "Personaje no encontrado"}), 404
     return jsonify(person.serialize()), 200
 
+@app.route('/people', methods=['POST'])
+def create_person():
+    body = request.get_json() # Captura el JSON que envíes desde Insomnia
+    new_person = Personajes(
+        name=body['name'],
+        height=body.get('height', "unknown"), # .get() evita errores si falta el campo
+        hair_color=body.get('hair_color', "unknown"),
+        description=body.get('description', "")
+    )
+    db.session.add(new_person)
+    db.session.commit()
+    return jsonify({"msg": "Personaje creado", "id": new_person.id}), 201
+
+@app.route('/people/<int:people_id>', methods=['PUT'])
+def update_person(people_id):
+    body = request.get_json()
+    person = Personajes.query.get(people_id)
+    if not person:
+        return jsonify({"msg": "No existe"}), 404
+    
+    person.name = body.get('name', person.name)
+    person.height = body.get('height', person.height)
+    db.session.commit()
+    return jsonify({"msg": "Personaje actualizado"}), 200
+
+@app.route('/people/<int:people_id>', methods=['DELETE'])
+def delete_person(people_id):
+    person = Personajes.query.get(people_id)
+    if person:
+        db.session.delete(person)
+        db.session.commit()
+        return jsonify({"msg": "Personaje borrado"}), 200
+    return jsonify({"msg": "No encontrado"}), 404
+
 @app.route('/planets', methods=['GET'])
 def get_all_planets():
     planets = Planetas.query.all()
     return jsonify([p.serialize() for p in planets]), 200
+
+@app.route('/planets', methods=['POST'])
+def create_planet():
+    body = request.get_json()
+    new_planet = Planetas(
+        name=body['name'],
+        climate=body.get('climate', "temperate"),
+        population=body.get('population', "0"),
+        diameter=body.get('diameter', "0")
+    )
+    db.session.add(new_planet)
+    db.session.commit()
+    return jsonify({"msg": "Planeta creado", "id": new_planet.id}), 201
+
+@app.route('/planets/<int:planet_id>', methods=['DELETE'])
+def delete_planet(planet_id):
+    planet = Planetas.query.get(planet_id)
+    if planet:
+        db.session.delete(planet)
+        db.session.commit()
+        return jsonify({"msg": "Planeta borrado"}), 200
+    return jsonify({"msg": "No encontrado"}), 404
 
 
 @app.route('/users/favorites', methods=['GET'])
